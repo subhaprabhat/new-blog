@@ -12,5 +12,6 @@ func PostRoutes(app *fiber.App) {
 	api.Get("/:id", controller.GetPost)
 	api.Post("/", controller.CreatePost)
 	 api.Put("/:id", controller.UpdatePost)
+	 
 	 api.Delete("/:id", controller.DeletePost)
 }
