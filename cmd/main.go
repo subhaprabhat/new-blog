@@ -1,9 +1,9 @@
 package main
 
 import (
-	"go-blog/config"
-	"go-blog/models"
-	"go-blog/routes"
+	"go-blog/internal/config"
+	"go-blog/internal/models"
+	"go-blog/pkg/post/routes"
 
 	"github.com/gofiber/fiber/v2"
 )

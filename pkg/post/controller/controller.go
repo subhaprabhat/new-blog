@@ -1,15 +1,37 @@
 package controller
 
 import (
-	"go-blog/config"
-	"go-blog/models"
+	"fmt"
+	"go-blog/internal/config"
+	"go-blog/internal/models"
+	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
+func customValidate(err error) map[string]string {
+	errors := make(map[string]string)
+
+	if validationErrors, ok := err.(validator.ValidationErrors); ok {
+		for _, fieldErr := range validationErrors {
+			tag := strings.ToLower(fieldErr.Tag())
+			field := strings.ToLower(fieldErr.Field())
+
+			switch tag {
+			case "required":
+				errors[field] = fmt.Sprintf("%v is a required field", field)
+			default:
+				errors[field] = fieldErr.Error()
+			}
+		}
+	}
+	return errors
+}
+
 func GetPosts(c *fiber.Ctx) error {
 	var posts []models.Post
-	config.DB.Find(&posts)
+	config.DB.Order("id desc").Find(&posts)
 	return c.JSON(posts)
 }
 
@@ -25,11 +47,22 @@ func GetPost(c *fiber.Ctx) error {
 
 func CreatePost(c *fiber.Ctx) error {
 	post := new(models.Post)
+
 	if err := c.BodyParser(post); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	validate := validator.New()
+	errs := validate.Struct(post)
+	if errs != nil {
+		errMap := customValidate(errs)
+		if len(errMap) != 0 {
+			return c.Status(400).JSON(errMap)
+		}
+	}
+
 	config.DB.Create(&post)
-	return c.JSON(post)
+	return c.Status(201).JSON(post)
 }
 
 func UpdatePost(c *fiber.Ctx) error {
@@ -41,6 +74,16 @@ func UpdatePost(c *fiber.Ctx) error {
 	if err := c.BodyParser(&post); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	validate := validator.New()
+	errs := validate.Struct(&post)
+	if errs != nil {
+		errMap := customValidate(errs)
+		if len(errMap) != 0 {
+			return c.Status(400).JSON(errMap)
+		}
+	}
+
 	config.DB.Save(&post)
 	return c.JSON(post)
 }
