@@ -3,7 +3,8 @@ package main
 import (
 	"go-blog/internal/config"
 	"go-blog/internal/models"
-	"go-blog/pkg/post/routes"
+	postRoutes "go-blog/pkg/post/routes"
+	userRoutes "go-blog/pkg/user/routes"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -11,10 +12,19 @@ import (
 func main() {
 	app := fiber.New()
 
-	config.ConnectDB()
-	config.DB.AutoMigrate(&models.Post{})
+	db, err := config.ConnectDB()
+	if err != nil {
+		panic(err)
+	}
 
-	routes.PostRoutes(app)
+	db.AutoMigrate(&models.User{})
 
-	app.Listen(":3030")
+	postRoutes.PostRoutes(app)
+
+	userRoutes.UserRoutes(app)
+
+	if err := app.Listen(":3030"); err != nil {
+		panic(err)
+	}
+
 }
